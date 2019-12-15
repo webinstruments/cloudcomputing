@@ -1,11 +1,5 @@
 "use strict";
 
-/**
- * Cloud Computing Example Service
- * 
- * Intended to be deployed on OKD/OpenShift or Heroku PaaS platforms
- */
-
 // Get default settings from environment variables
 const SSL = process.env.SSL || "false";
 const SERVER_PORT = process.env.EXAMPLE_SERVICE_PORT || process.env.PORT || 8080; // PORT environement variable provided by Heroku
@@ -151,7 +145,7 @@ class PSQL_DB {
     }
 }
 
-/** Class implementing the ReST Example API */
+/** Class implementing the ReST API */
 class CloudComputingAPI {
 
     parseResult(snippet) {
@@ -245,7 +239,7 @@ class CloudComputingAPI {
         }
     }
 
-    /** Create an Example ReST API 
+    /** Create an ReST API
      * @param {number} port - port number to listen
      * @param {string} prefix - resource path prefix
      * @param {Object} db - database connection
@@ -279,7 +273,7 @@ class CloudComputingAPI {
         this.server = this.app.listen(this.port, () => {
             const host = this.server.address().address;
             const port = this.server.address().port;
-            console.log("ExampleAPI listening at http://%s:%s%s", host, port, this.prefix);
+            console.log("API listening at http://%s:%s%s", host, port, this.prefix);
         });
 
     }
