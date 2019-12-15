@@ -1,19 +1,19 @@
 # PaaS Cloud Computing example
 Small rest service to create, modify and delete Snippet entries
 
-## Endpoints
-* GET /snippets
-```
+##Endpoints
+* #### GET /snippets
+
 retrieve multiple snippets filtered by their attributes id, name, author, description, tags, ...
-```
-* GET /snippets/${id}
-```
+
+* #### GET /snippets/${id}
+
 retrieve JSON of snippet
-```
-* POST /snippets
-```
+
+* #### POST /snippets
+
 create a new snippet entity with a JSON object
-```
+
 eg: 
 ```
 {
@@ -28,10 +28,10 @@ eg:
     ]
 }
 ```
-* PUT /snippets/${id}
-```
+* #### PUT /snippets/${id}
+
 update snippet entity with a JSON object
-```
+
 eg: 
 ```
 {
@@ -47,7 +47,6 @@ eg:
     ]
 }
 ```
-* DELETE /snippets/${id}
-```
+* #### DELETE /snippets/${id}
+
 removes a specific entity of snippets
-```
