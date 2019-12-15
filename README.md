@@ -1,7 +1,7 @@
 # PaaS Cloud Computing example
 Small rest service to create, modify and delete Snippet entries
 
-##Endpoints
+## Endpoints
 * #### GET /snippets
 
 retrieve multiple snippets filtered by their attributes id, name, author, description, tags, ...
