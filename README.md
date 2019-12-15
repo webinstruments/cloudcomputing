@@ -50,3 +50,6 @@ eg:
 * #### DELETE /snippets/${id}
 
 removes a specific entity of snippets
+* #### DELETE /snippets/all
+
+removes all entities

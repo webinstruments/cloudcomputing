@@ -53,35 +53,14 @@ class PSQL_DB {
     getSnippet(id, name, description, author, language, code, tag) {
         let counter = 1;
         let where = 'WHERE';
-        let args = [];
-        if (id) {
-            where += ` AND snippets.id=$${counter++}`;
-            args.push(id);
-        }
-        if (name) {
-            where += ` AND name=$${counter++}`;
-            args.push(name);
-        }
-        if (description) {
-            where += ` AND description=$${counter++}`;
-            args.push(description);
-        }
-        if (author) {
-            where += ` AND author=$${counter++}`;
-            args.push(author);
-        }
-        if (language) {
-            where += ` AND language=$${counter++}`;
-            args.push(language);
-        }
-        if (code) {
-            where += ` AND code=$${counter++}`;
-            args.push(code);
-        }
-        if (tag) {
-            where += ` AND tags.tag=$${counter++}`;
-            args.push(tag);
-        }
+        let args = [id, name, description, author, language, code, tag].filter(Boolean);
+        if (id) where += ` AND snippets.id=$${counter++}`;
+        if (name) where += ` AND name=$${counter++}`;
+        if (description) where += ` AND description=$${counter++}`;
+        if (author) where += ` AND author=$${counter++}`;
+        if (language) where += ` AND language=$${counter++}`;
+        if (code) where += ` AND code=$${counter++}`;
+        if (tag) where += ` AND tags.tag=$${counter++}`;
         if (!args.length) {
             where = '';
         }
@@ -98,27 +77,13 @@ class PSQL_DB {
     updateSnippet(id, name, description, author, language, code) {
         let counter = 1;
         let set = 'SET';
-        let args = [];
-        if (name) {
-            set += ` name=$${counter++},`;
-            args.push(name);
-        }
-        if (description) {
-            set += ` description=$${counter++},`;
-            args.push(description);
-        }
-        if (author) {
-            set += ` author=$${counter++},`;
-            args.push(author);
-        }
-        if (language) {
-            set += ` language=$${counter++},`;
-            args.push(language);
-        }
-        if (code) {
-            set += ` code=$${counter++},`;
-            args.push(code);
-        }
+        let args = [name, description, author, language, code].filter(Boolean);
+        if (name) set += ` name=$${counter++},`;
+        if (description) set += ` description=$${counter++},`;
+        if (author) set += ` author=$${counter++},`;
+        if (language) set += ` language=$${counter++},`;
+        if (code) set += ` code=$${counter++},`;
+
         if (!args.length || !id)
             return null;
         args.push(id);
@@ -127,11 +92,12 @@ class PSQL_DB {
     }
 
     deleteTags(snippetId) {
-        return this.connection.query('DELETE FROM tags where snippet_id = $1 RETURNING *', [snippetId])
+        return this.connection.query(`DELETE FROM tags where snippet_id = $1 RETURNING *`, [snippetId])
     }
 
-    deleteSnippet(snippetId) {
-        return this.connection.query('DELETE FROM snippets where id = $1 RETURNING *', [snippetId])
+    deleteSnippets(snippetId) {
+        return this.connection.query(`DELETE FROM snippets ${snippetId && 'where id = $1' || ''} RETURNING *`,
+            [snippetId].filter(Boolean))
     }
 
     createSnippet(name, description, author, language, code) {
@@ -174,7 +140,7 @@ class CloudComputingAPI {
         try {
             const snippet = await db.getSnippet(req.params.id);
             if (!snippet.rows[0])
-                return res.json({ "error": "snippet id not found" });
+                return res.status(404).json({ "error": "snippet id not found" });
 
             return res.json(this.parseResult(snippet.rows[0]));
         } catch (error) {
@@ -200,6 +166,7 @@ class CloudComputingAPI {
             });
 
         } catch (err) {
+            console.log(JSON.stringify(error));
             return res.status(500).json({ error: 'something went wrong' })
         }
     }
@@ -212,6 +179,9 @@ class CloudComputingAPI {
             const snippet = await db.updateSnippet(
                 req.params.id, req.body.name, req.body.description, req.body.author, req.body.language, req.body.code
             );
+            if (snippet && !snippet.rowCount) {
+                return res.status(404).json({ error: 'snippet not found' });
+            }
 
             if (req.body.tags && Array.isArray(req.body.tags)) {
                 await db.deleteTags(req.params.id);
@@ -224,17 +194,31 @@ class CloudComputingAPI {
             return res.json(this.parseResult(updatedSnippet.rows[0]));
 
         } catch (err) {
+            console.log(JSON.stringify(error));
             return res.status(500).json({ error: 'something went wrong' })
         }
     }
 
     async deleteSnippet(req, res) {
         try {
-            const deletedSnippet = await db.deleteSnippet(req.params.id);
+            const deletedSnippet = await db.deleteSnippets(req.params.id);
             if (deletedSnippet.rowCount)
                 return res.json({ successful: true });
             return res.status(404).json({ error: 'snippet id not found' });
         } catch (err) {
+            console.log(JSON.stringify(error));
+            return res.status(500).json({ error: 'something went wrong' })
+        }
+    }
+
+    async deleteAllSnippets(req, res) {
+        try {
+            const deletedSnippet = await db.deleteSnippets();
+            if (deletedSnippet.rowCount)
+                return res.json({ successful: `deleted ${deletedSnippet.rowCount} entries` });
+            return res.status(404).json({ error: 'no snippets found' });
+        } catch (err) {
+            console.log(JSON.stringify(error));
             return res.status(500).json({ error: 'something went wrong' })
         }
     }
@@ -266,6 +250,8 @@ class CloudComputingAPI {
         this.app.post(this.prefix + '/snippets', this.createSnippet.bind(this));
         // Update snippet with json
         this.app.put(this.prefix + '/snippets/:id', this.updateSnippet.bind(this));
+        // Delete all snippets
+        this.app.delete(this.prefix + '/snippets/all', this.deleteAllSnippets.bind(this));
         // Delete snippet
         this.app.delete(this.prefix + '/snippets/:id', this.deleteSnippet.bind(this));
 
